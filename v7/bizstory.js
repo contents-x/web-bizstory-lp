@@ -10,7 +10,7 @@
 
   // pages はページ画像の枚数（01.webp〜）。事例に企業名は載せない（題にも入れない）
   var MANGA = [
-    { slug: 'asobi-recruit', title: '総合職の採用マンガ', use: '採用', pages: 9 },
+    { slug: 'asobi-recruit', title: '総合職の採用マンガ', use: '採用', pages: 8 },
     { slug: 'bizsalesnavi', title: 'マンガでわかるビズセールスナビ', use: '商品紹介', pages: 12 },
     { slug: 'service-manga', title: 'マンガでわかる収益管理【AIサービス編】', use: '商品紹介', pages: 7 },
     { slug: 'saigo-no-hoken', title: '最後の保険', use: '集客', pages: 7 },
@@ -96,7 +96,7 @@
   }
 
   function pad(n) { return n < 10 ? '0' + n : String(n); }
-  var ASSET_V = '20261115b'; // 画像を差し替えたら上げる（古い画像がブラウザに残らないように）
+  var ASSET_V = '20261116a'; // 画像を差し替えたら上げる（古い画像がブラウザに残らないように）
   function mangaPage(slug, n) { return 'images/manga/' + slug + '/' + pad(n) + '.webp?v=' + ASSET_V; }
   function findManga(slug) { return MANGA.filter(function (m) { return m.slug === slug; })[0]; }
 
