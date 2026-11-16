@@ -96,7 +96,7 @@
   }
 
   function pad(n) { return n < 10 ? '0' + n : String(n); }
-  var ASSET_V = '20261116i'; // 画像を差し替えたら上げる（古い画像がブラウザに残らないように）
+  var ASSET_V = '20261116j'; // 画像を差し替えたら上げる（古い画像がブラウザに残らないように）
   function mangaPage(slug, n) { return 'images/manga/' + slug + '/' + pad(n) + '.webp?v=' + ASSET_V; }
   function findManga(slug) { return MANGA.filter(function (m) { return m.slug === slug; })[0]; }
 
@@ -203,8 +203,9 @@
   /* ---------- マンガを読む窓 ----------
      パソコン・タブレット（幅769px以上）: ビズマンガと同じく右から左へ読む見開き。
        表紙（1ページ目）だけ1枚で、そのあとは 2-3・4-5…の見開き（若いページが右）。
-       左半分をクリックすると次、右半分で前へ。カーソルは左半分で「<」、右半分で「>」になる（矢印のボタンは出さない）。
-     スマホ（幅768px以下）: 1ページずつ。左右の矢印・左へはらうでめくる。 */
+     スマホ（幅768px以下）: 1ページずつ。読む向きは同じく右から左。
+     どちらも、左半分をタップ（クリック）すると次、右半分で前へ。カーソルは左半分で「<」、右半分で「>」になる（矢印のボタンは出さない）。
+     指では右へはらうと次。キーボードは ← で次・→ で前。 */
   var SPREAD_MQ = window.matchMedia ? window.matchMedia('(min-width: 769px)') : null;
   var viewer = { manga: null, spread: false, slides: [], current: 0, page: 0, lastFocus: null };
 
@@ -224,8 +225,8 @@
     viewer.current = n;
     var pages = viewer.slides[n];
     viewer.page = pages[0] - 1;
-    // 見開きは右から左へ並べている（track が direction: rtl）ので、右へずらす
-    $('.bs-viewer__track', box).style.transform = 'translateX(' + (viewer.spread ? '' : '-') + (n * 100) + '%)';
+    // 右から左へ並べている（track が direction: rtl）ので、右へずらす
+    $('.bs-viewer__track', box).style.transform = 'translateX(' + (n * 100) + '%)';
     $all('.bs-viewer__dot', box).forEach(function (d, i) {
       d.classList.toggle('is-active', i === n);
       d.setAttribute('aria-current', i === n ? 'true' : 'false');
@@ -313,13 +314,13 @@
     $('.bs-viewer__prev', box).addEventListener('click', function () { viewerGo(viewer.current - 1); });
     $('.bs-viewer__next', box).addEventListener('click', function () { viewerGo(viewer.current + 1); });
     var stage = $('.bs-viewer__stage', box);
-    // 見開き: 左半分（カーソル「<」）で次、右半分（カーソル「>」）で前へ。左右の半分は .bs-viewer__zone（カーソルを「<」「>」にする）
+    // 左半分（カーソル「<」）で次、右半分（カーソル「>」）で前へ。左右の半分は .bs-viewer__zone（カーソルを「<」「>」にする）
     stage.addEventListener('click', function (e) {
-      if (!viewer.spread || e.target.closest('button')) return;
+      if (e.target.closest('button')) return;
       var r = stage.getBoundingClientRect();
       viewerGo(viewer.current + (e.clientX < r.left + r.width / 2 ? 1 : -1));
     });
-    // 指でめくる（1ページ: 左へはらうと次 / 見開き: 右へはらうと次）
+    // 指でめくる（右から左へ読むので、右へはらうと次）
     var startX = null, startY = 0;
     stage.addEventListener('touchstart', function (e) { startX = e.touches[0].clientX; startY = e.touches[0].clientY; }, { passive: true });
     stage.addEventListener('touchend', function (e) {
@@ -328,8 +329,7 @@
       var dy = e.changedTouches[0].clientY - startY;
       startX = null;
       if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
-      var forward = viewer.spread ? dx > 0 : dx < 0;
-      viewerGo(viewer.current + (forward ? 1 : -1));
+      viewerGo(viewer.current + (dx > 0 ? 1 : -1));
     });
     // 画面の幅が変わって見開き⇔1ページが切り替わったら、読んでいたページのまま組み直す
     if (SPREAD_MQ) {
@@ -340,9 +340,8 @@
     document.addEventListener('keydown', function (e) {
       if (box.hidden) return;
       if (e.key === 'Escape') { closeViewer(); return; }
-      var step = viewer.spread ? -1 : 1; // 見開きは ← で次へ
-      if (e.key === 'ArrowRight') { viewerGo(viewer.current + step); return; }
-      if (e.key === 'ArrowLeft') { viewerGo(viewer.current - step); return; }
+      if (e.key === 'ArrowLeft') { viewerGo(viewer.current + 1); return; }
+      if (e.key === 'ArrowRight') { viewerGo(viewer.current - 1); return; }
       if (e.key !== 'Tab') return;
       var items = $all('button:not([disabled])', box).filter(function (n) { return n.offsetParent !== null; });
       if (!items.length) return;
