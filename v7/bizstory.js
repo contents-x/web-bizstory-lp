@@ -96,7 +96,7 @@
   }
 
   function pad(n) { return n < 10 ? '0' + n : String(n); }
-  var ASSET_V = '20261116a'; // 画像を差し替えたら上げる（古い画像がブラウザに残らないように）
+  var ASSET_V = '20261116b'; // 画像を差し替えたら上げる（古い画像がブラウザに残らないように）
   function mangaPage(slug, n) { return 'images/manga/' + slug + '/' + pad(n) + '.webp?v=' + ASSET_V; }
   function findManga(slug) { return MANGA.filter(function (m) { return m.slug === slug; })[0]; }
 
