@@ -1291,8 +1291,8 @@ html:has(.bs-page) { scroll-behavior: smooth; scroll-padding-top: calc(var(--bs-
 .bs-viewer__arrow { position: absolute; top: 50%; transform: translateY(-50%); z-index: 2; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; padding: 0 0 3px; border: 0; border-radius: 50%; background: rgba(255, 255, 255, 0.85); color: var(--bs-ink); font-size: 26px; line-height: 1; cursor: pointer; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18); transition: background 0.2s, opacity 0.2s; }
 .bs-viewer__arrow:hover { background: #fff; }
 .bs-viewer__arrow:disabled { opacity: 0; pointer-events: none; }
-.bs-viewer__prev { left: 12px; }
-.bs-viewer__next { right: 12px; }
+.bs-viewer__prev { right: 12px; } /* 右から左へ読むので、次は左・前は右 */
+.bs-viewer__next { left: 12px; }
 .bs-viewer__foot { display: flex; align-items: center; justify-content: center; gap: 14px; height: 52px; padding: 0 16px; }
 .bs-viewer__dots { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 .bs-viewer__dot { width: 10px; height: 10px; padding: 0; border: 0; border-radius: 50%; background: #ccc; cursor: pointer; transition: background 0.3s; }
@@ -1306,7 +1306,7 @@ html:has(.bs-page) { scroll-behavior: smooth; scroll-padding-top: calc(var(--bs-
 .bs-viewer .bs-viewer__zone--prev { right: 0; cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAFfElEQVR4AaxXaUhcVxSeeeM4i5pEaRJjE7WjRC0pVEsUA1oV+sMmSIzUXau4/RC0VfCHVEWt/hQUVHDDBSWWqhSx0lYQF6iKVdBALe5bGFxwN+PojP3OhZFRZ5zFDPe8d965Z/nuufec94bjmfG7f/++tZOT02f4eRMRTzIzXPGMBSB0dnaOQLBGV1fXNRsbmwOBQLDA5/NHiYgnmYuLywr06qH3HcAIQQaHQQAymeyNTCb7j+O4txYWFvHe3t72GRkZJ8XFxYra2tpjIuJJ5uPj4yAUChMB6heAmQGQEEMI9AKglMJBNxx02NnZPSkpKVFMTk4etra2HmdmZiqjo6NPg4KCVETEk4zmJiYmDouKihS2traOAPIbwHc5ODhI4Ufn0AkABk/u3LkzAgevaGXDw8MfIiMjT62srHQ60RZaW1vzYmJiTskmPT1dibnXYrH478ePH38K/tq4BgCIHSUSyT8ikci9sbGRrRb8NUNDArLJyso6qaurOwb/DDRBC7tqdwnAw4cPrbDqHijbdXZ2Kvz8/FRXDUx9DgwMVHV0dHywtLT8BAvrQSYk2j60AXBSqbQLk8+A+sTNzU0N/qMMDw8PdWVlpQLOvsAhfYs7H8TGBQCUTxxW/01cXJzS19dX78p7e3st/P39rdvb240qMxYFF8pEVFTUKWKEIFYkRGxoAHAosfy7d++qad/YjJ4Lys5yfX2dn5ubK25ubjYJRHZ2tgKHVI2+8RPcsywwAOhkX6vVallOTo4SDQVz+gdlSDNbWFhoEoh79+7xsEDl+fn5546Oji/IDwMARCHIgDo8PPyUhDdRaGjoGdW5RodAoP6NzgSVM+KpEI81KQYAzkLR4VTodmAND6pzbRD5+fliY0GgwnheXl5qnIXXFIlDKmzBOOHUn+Nu9LgNCHd3d+zC+VMqe8rAI4pqb29vEgCyMRfEgwcPWCx0Vgc6/Q7kDEKz6l4XiJWVFXbCya8uwmJZLKThEafCj5TwQDeziGzRxC5s4fJGANh/pgs7jsNlg542NzdpO4g1iejwFRQUiI+Pj5kdHU68RdkKmUDHRSuWnFMqlQzA1tbWjah1+OFRcKoAzRwFpy3RPOu7b2xsaGLJOblcvonyez81NWVSBswNTqCmp6cF2Ab50tLSLguKLtg9NjYm2N/fp3mDdJvgOzs7vPHxcQFi/kqBGACcgx4QH73dkoQ3UVdXl4V22rH/CmPSrvHZ1NTEYiBeD8kYgMXFxd+RkpWamhqhoSy0tLQwB2RMwePj4w22b9IlIt/0MsOWLyD9f5GMAQCjAqIfj46OuOrqahGe9Y6UlBQlPirOS0tLFaYEJ4dVVVUihULBR5n+gGf2ytcA4C0sLHRC2FZfXy+kPQKvcwQHB58NDAwcRkREGL1ycjQyMiJoaGgQYqHtyDh97JL48v8CHIwk0LukpCTR7OzsBTimeYvLzMwMl5qaKkLwSbwJv9d2dSkI9gUZUnyLprITFhYmGRoaEmgrm8MPDg4K8JqXwufm2dnZy7m5uRNtP5cA0AS+dtaA4ksY/JuQkCAtLy+3PDm5ZENqBolsysrKRImJiVKcrXdoeF9hgfKrhtcAkMLa2tr63t6eL1LWXVFRIQoICJDQNyAc0fSNRDrUJ/BFLcGHKFVM18HBwYvV1dX3ugx1AiBFtOYDHBb6anm+vb39J30Denp6WsfGxrKstLW1Cfv7+wV9fX0WxFOm8A9JQjrUJ3Z3d/+An+c43G/Q+w/B6xx6AWi04WAcB/IlSkeGPSwYHR1doKzk5eWJk5OTpWlpaRLiSTY2NjYPnXxkzhk2r8hW40ff3SAAjeHy8jISsliMQ/QUKbUhQAjkQ0Q8yebn592h9DNoWWNn6P4/AAAA///PnvcDAAAABklEQVQDACfCoCMVzHNcAAAAAElFTkSuQmCC") 16 16, e-resize; }
 .bs-viewer.is-last .bs-viewer__zone--next,
 .bs-viewer.is-first .bs-viewer__zone--prev { cursor: default; }
-.bs-viewer__arrow { display: none; } /* めくるのは左右の半分のタップ（矢印は出さない） */
+.bs-viewer.is-spread .bs-viewer__arrow { display: none; } /* 見開きは左右の半分のクリックでめくる（矢印は出さない）。スマホは矢印も出す */
 .bs-viewer__dots { flex-direction: row-reverse; } /* 下の丸も右から左へ進む */
 .bs-viewer button:focus-visible { outline: 3px solid var(--bs-yellow); outline-offset: 2px; }
 /* 見開き（幅769px以上）: ビズマンガと同じく右から左へ読む。表紙だけ1枚、そのあとは 2-3・4-5…（若いページが右）。

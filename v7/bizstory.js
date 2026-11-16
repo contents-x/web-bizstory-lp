@@ -96,7 +96,7 @@
   }
 
   function pad(n) { return n < 10 ? '0' + n : String(n); }
-  var ASSET_V = '20261116j'; // 画像を差し替えたら上げる（古い画像がブラウザに残らないように）
+  var ASSET_V = '20261116k'; // 画像を差し替えたら上げる（古い画像がブラウザに残らないように）
   function mangaPage(slug, n) { return 'images/manga/' + slug + '/' + pad(n) + '.webp?v=' + ASSET_V; }
   function findManga(slug) { return MANGA.filter(function (m) { return m.slug === slug; })[0]; }
 
@@ -204,7 +204,8 @@
      パソコン・タブレット（幅769px以上）: ビズマンガと同じく右から左へ読む見開き。
        表紙（1ページ目）だけ1枚で、そのあとは 2-3・4-5…の見開き（若いページが右）。
      スマホ（幅768px以下）: 1ページずつ。読む向きは同じく右から左。
-     どちらも、左半分をタップ（クリック）すると次、右半分で前へ。カーソルは左半分で「<」、右半分で「>」になる（矢印のボタンは出さない）。
+     どちらも、左半分をタップ（クリック）すると次、右半分で前へ。カーソルは左半分で「<」、右半分で「>」になる。
+     スマホだけ左右の矢印も出す（左の「<」で次・右の「>」で前）。見開きは矢印を出さない。
      指では右へはらうと次。キーボードは ← で次・→ で前。 */
   var SPREAD_MQ = window.matchMedia ? window.matchMedia('(min-width: 769px)') : null;
   var viewer = { manga: null, spread: false, slides: [], current: 0, page: 0, lastFocus: null };
