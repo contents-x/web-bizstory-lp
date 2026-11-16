@@ -96,7 +96,7 @@
   }
 
   function pad(n) { return n < 10 ? '0' + n : String(n); }
-  var ASSET_V = '20261116b'; // 画像を差し替えたら上げる（古い画像がブラウザに残らないように）
+  var ASSET_V = '20261116f'; // 画像を差し替えたら上げる（古い画像がブラウザに残らないように）
   function mangaPage(slug, n) { return 'images/manga/' + slug + '/' + pad(n) + '.webp?v=' + ASSET_V; }
   function findManga(slug) { return MANGA.filter(function (m) { return m.slug === slug; })[0]; }
 
@@ -200,50 +200,118 @@
     return box;
   }
 
-  /* ---------- マンガを読む窓（ビズマンガのHPのトップと同じ、1ページずつめくる形） ---------- */
-  var viewer = { pages: 0, current: 0, lastFocus: null };
+  /* ---------- マンガを読む窓 ----------
+     パソコン・タブレット（幅769px以上）: 見開き。1ページ目が左・2ページ目が右で、左から右へ読む。
+       右半分をタップ（クリック）すると次、左半分で前へ（矢印のボタンは出さない）。
+     スマホ（幅768px以下）: 1ページずつ。左右の矢印・左へはらうでめくる。 */
+  var SPREAD_MQ = window.matchMedia ? window.matchMedia('(min-width: 769px)') : null;
+  var viewer = { manga: null, spread: false, slides: 0, current: 0, page: 0, lastFocus: null };
+
+  function isSpread() { return !!(SPREAD_MQ && SPREAD_MQ.matches); }
 
   function viewerGo(n) {
     var box = $('[data-bs-viewer]');
-    if (n < 0 || n >= viewer.pages) return;
+    if (n < 0 || n >= viewer.slides) return;
     viewer.current = n;
+    viewer.page = viewer.spread ? n * 2 : n;
     $('.bs-viewer__track', box).style.transform = 'translateX(-' + (n * 100) + '%)';
     $all('.bs-viewer__dot', box).forEach(function (d, i) {
       d.classList.toggle('is-active', i === n);
       d.setAttribute('aria-current', i === n ? 'true' : 'false');
     });
+    box.classList.toggle('is-first', n === 0);
+    box.classList.toggle('is-last', n === viewer.slides - 1);
     $('.bs-viewer__prev', box).disabled = n === 0;
-    $('.bs-viewer__next', box).disabled = n === viewer.pages - 1;
-    $('.bs-viewer__count', box).textContent = (n + 1) + ' / ' + viewer.pages;
+    $('.bs-viewer__next', box).disabled = n === viewer.slides - 1;
+    var total = viewer.manga.pages;
+    var label = viewer.page + 1;
+    if (viewer.spread && viewer.page + 2 <= total) label += '-' + (viewer.page + 2);
+    $('.bs-viewer__count', box).textContent = label + ' / ' + total;
+  }
+
+  function pageImg(m, i, name) {
+    var img = document.createElement('img');
+    img.src = mangaPage(m.slug, i);
+    img.alt = name + '（' + i + 'ページ目）';
+    img.loading = i <= 3 ? 'eager' : 'lazy';
+    img.decoding = 'async';
+    return img;
+  }
+
+  // 今の画面の幅に合わせて、ページ（見開き or 1ページ）を組み立てる。page は開いておくページ（0始まり）
+  function buildViewer(page) {
+    var box = $('[data-bs-viewer]');
+    var m = viewer.manga;
+    var track = $('.bs-viewer__track', box);
+    var dots = $('.bs-viewer__dots', box);
+    var name = m.use + 'のマンガ';
+    var spread = isSpread();
+    viewer.spread = spread;
+    box.classList.toggle('is-spread', spread);
+    track.textContent = '';
+    dots.textContent = '';
+    var slides = 0;
+    for (var i = 1; i <= m.pages; i += spread ? 2 : 1) {
+      if (spread) {
+        var pair = el('div', 'bs-viewer__spread');
+        pair.appendChild(pageImg(m, i, name));
+        if (i + 1 <= m.pages) pair.appendChild(pageImg(m, i + 1, name));
+        else pair.classList.add('is-last-single');
+        track.appendChild(pair);
+      } else {
+        track.appendChild(pageImg(m, i, name));
+      }
+      var dot = el('button', 'bs-viewer__dot');
+      dot.type = 'button';
+      dot.setAttribute('aria-label', (spread && i + 1 <= m.pages ? i + '-' + (i + 1) : i) + 'ページ目へ');
+      dot.addEventListener('click', viewerGo.bind(null, slides));
+      dots.appendChild(dot);
+      slides++;
+    }
+    viewer.slides = slides;
+    // 切り替えの瞬間はアニメーションさせない
+    track.style.transition = 'none';
+    viewerGo(spread ? Math.floor(page / 2) : page);
+    void track.offsetWidth;
+    track.style.transition = '';
+  }
+
+  /* 「右クリック：次へ／左クリック：前へ」の説明（見開きのときだけ）
+     - 出てから HINT_MIN_MS の間は、カーソルを動かしても消さない
+     - それを過ぎてからカーソルを動かす（めくる・キーを押す）と消える
+     - 消えたあと HINT_IDLE_MS の間カーソルが動かなければ、また出す
+     - 最初の見開きでは「前へ」、最後の見開きでは「次へ」を出さない（CSS の is-first / is-last） */
+  var HINT_MIN_MS = 1500;
+  var HINT_IDLE_MS = 3000;
+
+  function showHint() {
+    var box = $('[data-bs-viewer]');
+    if (!box || box.hidden || !viewer.spread || box.classList.contains('is-hint')) return;
+    box.classList.add('is-hint');
+    viewer.hintShownAt = Date.now();
+  }
+
+  function hintActivity() {
+    var box = $('[data-bs-viewer]');
+    if (!box || box.hidden) return;
+    if (box.classList.contains('is-hint') && Date.now() - viewer.hintShownAt >= HINT_MIN_MS) box.classList.remove('is-hint');
+    clearTimeout(viewer.hintTimer);
+    viewer.hintTimer = setTimeout(showHint, HINT_IDLE_MS);
   }
 
   function openViewer(m) {
     var box = $('[data-bs-viewer]');
     if (!box || !m) return;
-    var track = $('.bs-viewer__track', box);
-    var dots = $('.bs-viewer__dots', box);
-    var name = m.use + 'のマンガ';
-    track.textContent = '';
-    dots.textContent = '';
-    for (var i = 1; i <= m.pages; i++) {
-      var img = document.createElement('img');
-      img.src = mangaPage(m.slug, i);
-      img.alt = name + '（' + i + 'ページ目）';
-      img.loading = i <= 2 ? 'eager' : 'lazy';
-      img.decoding = 'async';
-      track.appendChild(img);
-      var dot = el('button', 'bs-viewer__dot');
-      dot.type = 'button';
-      dot.setAttribute('aria-label', i + 'ページ目へ');
-      dot.addEventListener('click', viewerGo.bind(null, i - 1));
-      dots.appendChild(dot);
-    }
-    $('.bs-viewer__dialog', box).setAttribute('aria-label', name);
-    viewer.pages = m.pages;
+    viewer.manga = m;
+    $('.bs-viewer__dialog', box).setAttribute('aria-label', m.use + 'のマンガ');
     viewer.lastFocus = document.activeElement;
     box.hidden = false;
     document.body.classList.add('bs-modal-open');
-    viewerGo(0);
+    buildViewer(0);
+    // 見開きのときだけ「右クリック：次へ／左クリック：前へ」を出す（hintActivity の説明を参照）
+    box.classList.remove('is-hint');
+    showHint();
+    hintActivity();
     $('.bs-viewer__close', box).focus();
   }
 
@@ -251,6 +319,9 @@
     var box = $('[data-bs-viewer]');
     if (!box || box.hidden) return;
     box.hidden = true;
+    viewer.manga = null;
+    clearTimeout(viewer.hintTimer);
+    box.classList.remove('is-hint');
     $('.bs-viewer__track', box).textContent = '';
     document.body.classList.remove('bs-modal-open');
     if (viewer.lastFocus && typeof viewer.lastFocus.focus === 'function') viewer.lastFocus.focus();
@@ -262,8 +333,17 @@
     $all('[data-bs-viewer-close]', box).forEach(function (b) { b.addEventListener('click', closeViewer); });
     $('.bs-viewer__prev', box).addEventListener('click', function () { viewerGo(viewer.current - 1); });
     $('.bs-viewer__next', box).addEventListener('click', function () { viewerGo(viewer.current + 1); });
-    // 指でめくる（左へはらうと次のページ）
     var stage = $('.bs-viewer__stage', box);
+    box.addEventListener('mousemove', hintActivity);
+    box.addEventListener('touchstart', hintActivity, { passive: true });
+    box.addEventListener('click', hintActivity);
+    // 見開き: 右半分をタップすると次、左半分で前へ
+    stage.addEventListener('click', function (e) {
+      if (!viewer.spread || e.target.closest('button')) return;
+      var r = stage.getBoundingClientRect();
+      viewerGo(viewer.current + (e.clientX >= r.left + r.width / 2 ? 1 : -1));
+    });
+    // 指でめくる（左へはらうと次）
     var startX = null, startY = 0;
     stage.addEventListener('touchstart', function (e) { startX = e.touches[0].clientX; startY = e.touches[0].clientY; }, { passive: true });
     stage.addEventListener('touchend', function (e) {
@@ -274,8 +354,15 @@
       if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
       viewerGo(viewer.current + (dx < 0 ? 1 : -1));
     });
+    // 画面の幅が変わって見開き⇔1ページが切り替わったら、読んでいたページのまま組み直す
+    if (SPREAD_MQ) {
+      var onChange = function () { if (!box.hidden && viewer.manga) buildViewer(viewer.page); };
+      if (SPREAD_MQ.addEventListener) SPREAD_MQ.addEventListener('change', onChange);
+      else if (SPREAD_MQ.addListener) SPREAD_MQ.addListener(onChange);
+    }
     document.addEventListener('keydown', function (e) {
       if (box.hidden) return;
+      hintActivity();
       if (e.key === 'Escape') { closeViewer(); return; }
       if (e.key === 'ArrowRight') { viewerGo(viewer.current + 1); return; }
       if (e.key === 'ArrowLeft') { viewerGo(viewer.current - 1); return; }
